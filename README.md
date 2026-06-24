@@ -10,52 +10,60 @@
 - 📋 **نسخ الإجابة** مع السؤال بنقرة واحدة
 - ⚡ **بث مباشر** للإجابات (Streaming)
 - 🌙 **دعم كامل للغة العربية** (RTL)
+- 🆓 **مجاني** - يعمل بـ Google Gemini
 
-## التثبيت المحلي
+---
+
+## الحصول على مفتاح Google Gemini API (مجاني)
+
+### الخطوات:
+1. افتح هذا الرابط: **https://aistudio.google.com/app/apikey**
+2. سجّل دخول بحساب Google الخاص بك
+3. اضغط **"Create API Key"**
+4. انسخ المفتاح (يبدأ بـ `AIzaSy...`)
+
+> المفتاح مجاني تماماً — لا يحتاج بطاقة ائتمان
+
+---
+
+## النشر على Vercel
+
+1. افتح **[vercel.com](https://vercel.com)** وسجّل بحساب GitHub
+2. اضغط **"Add New Project"** → **"Import Git Repository"**
+3. اختر مستودع `royaseu0-lab/seu`
+4. في قسم **"Environment Variables"** أضف:
+   ```
+   Name:  GEMINI_API_KEY
+   Value: AIzaSy... (المفتاح الذي نسخته)
+   ```
+5. اضغط **"Deploy"** ✅
+
+---
+
+## التشغيل المحلي
 
 ```bash
-# 1. استنساخ المستودع
 git clone <repo-url>
 cd seu
-
-# 2. تثبيت التبعيات
 npm install
-
-# 3. إعداد متغيرات البيئة
 cp .env.example .env.local
-# ثم افتح .env.local وضع مفتاح Anthropic API
-
-# 4. تشغيل التطبيق
+# افتح .env.local وضع: GEMINI_API_KEY=AIzaSy...
 npm run dev
 ```
 
 افتح http://localhost:3000
 
-## النشر على Vercel
+---
 
-1. اذهب إلى [vercel.com](https://vercel.com)
-2. ربط هذا المستودع
-3. أضف **Environment Variable**:
-   - الاسم: `ANTHROPIC_API_KEY`
-   - القيمة: مفتاح API من [console.anthropic.com](https://console.anthropic.com)
-4. انشر!
-
-## الحصول على مفتاح Anthropic API
-
-1. سجّل في [console.anthropic.com](https://console.anthropic.com)
-2. اذهب إلى **API Keys**
-3. انشئ مفتاحاً جديداً
-4. انسخه في `.env.local` أو في إعدادات Vercel
-
-## التقنيات المستخدمة
+## التقنيات
 
 - **Next.js 14** - إطار العمل
-- **Anthropic Claude** - نموذج الذكاء الاصطناعي
+- **Google Gemini 2.0 Flash** - نموذج الذكاء الاصطناعي (مجاني)
 - **TailwindCSS** - التنسيق
-- **react-markdown + remark-gfm** - عرض Markdown والجداول
+- **react-markdown + remark-gfm** - الجداول والـ Markdown
 - **jsPDF** - تصدير PDF
 
-## الروابط المرجعية للجامعة
+## روابط الجامعة المرجعية
 
 - [الموقع الرئيسي](https://www.seu.edu.sa)
 - [بوابة الطالب](https://sso.seu.edu.sa)

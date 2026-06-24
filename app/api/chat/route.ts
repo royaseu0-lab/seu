@@ -1,9 +1,14 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from '@google/generative-ai'
 import { SEU_SYSTEM_PROMPT } from '@/lib/seu-system-prompt'
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+
+const safetySettings = [
+  { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+]
 
 export async function POST(request: Request) {
   try {
@@ -13,34 +18,41 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Invalid messages format' }, { status: 400 })
     }
 
-    const stream = await client.messages.stream({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: SEU_SYSTEM_PROMPT,
-      messages: messages.map((m: { role: string; content: string }) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      })),
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      systemInstruction: SEU_SYSTEM_PROMPT,
+      safetySettings,
+      generationConfig: {
+        maxOutputTokens: 4096,
+        temperature: 0.3,
+      },
     })
 
-    const encoder = new TextEncoder()
+    // Build Gemini chat history (all except last user message)
+    const history = messages.slice(0, -1).map((m: { role: string; content: string }) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }))
 
+    const lastMessage = messages[messages.length - 1]
+    const chat = model.startChat({ history })
+
+    const result = await chat.sendMessageStream(lastMessage.content)
+
+    const encoder = new TextEncoder()
     const readable = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of stream) {
-            if (
-              chunk.type === 'content_block_delta' &&
-              chunk.delta.type === 'text_delta'
-            ) {
-              const data = JSON.stringify({ text: chunk.delta.text })
-              controller.enqueue(encoder.encode(`data: ${data}\n\n`))
+          for await (const chunk of result.stream) {
+            const text = chunk.text()
+            if (text) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
             }
           }
           controller.enqueue(encoder.encode('data: [DONE]\n\n'))
           controller.close()
-        } catch (error) {
-          controller.error(error)
+        } catch (err) {
+          controller.error(err)
         }
       },
     })
@@ -55,7 +67,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Chat API error:', error)
     return Response.json(
-      { error: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.' },
+      { error: 'حدث خطأ أثناء معالجة طلبك. يرجى التحقق من مفتاح API والمحاولة مرة أخرى.' },
       { status: 500 }
     )
   }
